@@ -10,6 +10,9 @@ from src.logger import logging  # Ensure this file exists in src/logger.py
 from src.components.data_transformation import DataTransformation  # Ensure this exists
 from src.components.data_transformation import DataTransformationConfig  # Unused, can be removed
 
+from src.components.model_trainer import ModelTrainerConfig
+from src.components.model_trainer import ModelTrainer
+
 @dataclass
 class DataIngestionConfig:
     """
@@ -50,11 +53,14 @@ class DataIngestion:
             # Split the data
             logging.info("Train-test split initiated")
             train_set, test_set = train_test_split(df, test_size=0.2, random_state=42)
+            print("Train shape:", train_set.shape)
+            print("Test shape:", test_set.shape)
 
             # Save train and test sets
             train_set.to_csv(self.ingestion_config.train_data_path, index=False, header=True)
             test_set.to_csv(self.ingestion_config.test_data_path, index=False, header=True)
             logging.info(f"Train and test data saved to {self.ingestion_config.train_data_path} and {self.ingestion_config.test_data_path}")
+            
 
             return (
                 self.ingestion_config.train_data_path,
@@ -72,4 +78,9 @@ if __name__ == '__main__':
 
     # Trigger data transformation after ingestion
     data_transformation = DataTransformation()
-    data_transformation.initiate_data_transformation(train_data, test_data)
+    train_arr,test_arr,_ = data_transformation.initiate_data_transformation(train_data, test_data)
+    print("train_arr shape:", train_arr.shape)
+    print("test_arr shape:", test_arr.shape)
+
+    modeltrainer=ModelTrainer()
+    print(modeltrainer.initiate_model_trainer(train_arr,test_arr))
