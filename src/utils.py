@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.metrics import r2_score
-
+from sklearn.model_selection import GridSearchCV
 from src.exception import CustomException
 from src.logger import logging
 
@@ -32,14 +32,20 @@ def save_object(file_path: str, obj: object) -> None:
         raise CustomException(f"Error saving object to {file_path}", sys) from e
 
 
-def evaluate_models(X_train, X_test, y_train, y_test, models):
+def evaluate_models(X_train, X_test, y_train, y_test, models, para):
     try:
         report = {}
+        best_score = float('-inf')
+        best_model = None
+        best_model_name = ""
 
-        report = {}
         for key, model in models.items():
-            model.fit(X_train, y_train)
+            params = para[key]
+            gs = GridSearchCV(model, params, cv=3)
+            gs.fit(X_train, y_train)
 
+            model = gs.best_estimator_
+            model.fit(X_train, y_train)
 
             y_train_pred = model.predict(X_train)
             y_test_pred = model.predict(X_test)
@@ -47,9 +53,14 @@ def evaluate_models(X_train, X_test, y_train, y_test, models):
             train_model_score = r2_score(y_train, y_train_pred)
             test_model_score = r2_score(y_test, y_test_pred)
 
-            report[key] =test_model_score
+            report[key] = test_model_score
 
-        return report
+            if test_model_score > best_score:
+                best_score = test_model_score
+                best_model = model
+                best_model_name = key
+
+        return report, best_model_name, best_model
 
     except Exception as e:
         raise CustomException(e, sys)
